@@ -27,6 +27,7 @@ struct  ControleNFA {
     // construtor do controlador que faz um estado inicial q0 que vai para
     // os estados iniciais dos demais AFNs com epslon 
     ControleNFA(){
+        this->AFN_Final = new NFA();
         Estado* q0 = new Estado();
         this->AFN_Final->estados.push_back(q0);
         this->AFN_Final->posInicial = 0;
@@ -132,7 +133,6 @@ struct  ControleNFA {
                 // é necessário ligar o inicial do NFA resultante no inicial do NFA 
                 // que está operando com o *; e liga o final do NFA com o final do
                 // NFA resultante, tudo isso com epslon transição. Empilha o NFA resultante
-
                 NFA* result = new NFA();
                 Estado* q0 = new Estado();
                 Estado* q1 = new Estado();
@@ -140,8 +140,8 @@ struct  ControleNFA {
                 result->estados.push_back(q0);
                 result->estados.push_back(q1);
                 result->posInicial = 0;
-                NFA* nfa0 = pilhaNFA.top();
-                pilhaNFA.pop();
+                NFA* nfa0 = bufferNFA.top();
+                bufferNFA.pop();
                 q0->transicoes.push_back({0, nfa0->estados[nfa0->posInicial] });
                 for(Estado* estado : nfa0->estados){
                     if (estado->final){
@@ -152,9 +152,8 @@ struct  ControleNFA {
                 }
                 q0->transicoes.push_back({0,q1});
                 q1->transicoes.push_back({0,q0});
-                pilhaNFA.push(result);
-                pilhaChar.push(0);
                 bufferNFA.push(result);
+                operandos.push(0);
             }
             else if(simbolo == 0){
                 // armazena o NFA tanto no buffer como no operandos, sendo representado por 0
@@ -230,6 +229,7 @@ struct  ControleNFA {
                     }
                     else if( operandos.top() == '['){
                         operandos.pop();
+                        break;
                     }
                 }
             }
