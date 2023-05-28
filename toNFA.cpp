@@ -65,12 +65,10 @@ struct  ControleNFA {
         // coloca na string todos os estados presentes no vetor de estados,
         // os identifica com um número iniciando de 0, que é o estado inicial
         for(int i{0}; i < this->AFN_Final->estados.size();i++){
-            Estado* estado = this->AFN_Final->estados[i];
             str+= "q" + std::to_string(i) + ", ";
         }
         str+='\n';
-        // guarda o estado final e informa qual seu identificador(0)
-        Estado* state = this->AFN_Final->estados[this->AFN_Final->posInicial];
+
         str += "Estado inicial: q" + std::to_string(this->AFN_Final->posInicial) + "\n";
         std::vector<Estado*> finais;
         str += "Estados finais: ";
@@ -142,6 +140,8 @@ struct  ControleNFA {
                 result->posInicial = 0;
                 NFA* nfa0 = bufferNFA.top();
                 bufferNFA.pop();
+                if( operandos.top() == 0)
+                    operandos.pop();
                 q0->transicoes.push_back({0, nfa0->estados[nfa0->posInicial] });
                 for(Estado* estado : nfa0->estados){
                     if (estado->final){
@@ -229,6 +229,7 @@ struct  ControleNFA {
                     }
                     else if( operandos.top() == '['){
                         operandos.pop();
+                        operandos.push(0);
                         break;
                     }
                 }
