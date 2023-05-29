@@ -1,6 +1,11 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <stack>
+#include <string>
+#include <fstream>
 #include <map>
-// as outras bibliotecas estão dentro desse arquivo a baixo
-#include "toNFA.cpp"
+#include <sstream>
 
 // função que preenche o alfabeto
 std::vector<char> preencherAlfabeto(){
@@ -30,12 +35,29 @@ std::vector<char> preencherAlfabeto(){
     alfabeto.push_back('&');
     alfabeto.push_back('|');
     alfabeto.push_back('<');
+    alfabeto.push_back('_');
     alfabeto.push_back('>');
     alfabeto.push_back('"');
 
     return alfabeto;
 
 }
+
+//um estado e suas transições
+struct Estado{
+    // todas as transições do estado atual para os demais com um determinado char
+    // para representar o epslon, o char recebe 0 
+    std::vector<std::pair<char,Estado*>> transicoes;
+    bool final{false}; //se um estado for final ou não
+};
+
+// representa a estrutura do NFA (ou AFN)
+struct NFA{
+    //estados presentes na estrutura
+    std::vector<Estado*> estados;
+    //posição do estado inicial no vetor
+    int posInicial{0};
+};
 
 struct DFA{
     //estados presentes na estrutura
@@ -54,7 +76,7 @@ struct CampoTabelaDFA{
 // controlador que organiza as funções e atributos necessários para a conversão
 struct ControleDFA{
     std::vector<CampoTabelaDFA*> tabelaDeConversao; // tabela
-    NFA* nfa1; // Autômato finito não determinístico que será convertido
+    NFA* nfa; // Autômato finito não determinístico que será convertido
     std::vector<char> alfabeto; // alfabeto
     DFA* DFAFinal; // autômato finito determinístico convertido
     std::vector<std::pair<std::vector<Estado*>,Estado*>> relacao; // relações entre um conjunto de estados e um estado, estrutura auxiliar
@@ -68,11 +90,15 @@ struct ControleDFA{
         return conjunto1;
     }
 
-    ControleDFA(NFA* nfa){
+    ControleDFA(){
+        this->nfa = new NFA();
         this->DFAFinal = new DFA();
-        this->nfa1 = nfa;
+    }
+
+    // função que inicia a conversão
+    void Conversao(){
         // coloco na tabela um conjunto de todas as epslon-transições de um estado 
-        for(Estado* estado : nfa->estados){
+        for(Estado* estado : this->nfa->estados){
             CampoTabelaDFA* campo = new CampoTabelaDFA();
             campo->charTransicao = 0;
             campo->conjuntoOrigem = this->EstadosSimuntaneos(estado, 0);
@@ -92,7 +118,7 @@ struct ControleDFA{
                 this->relacao.push_back({campo->conjuntoOrigem, q}); 
             }            
         }
-
+    
         this->alfabeto = preencherAlfabeto();
 
     // descubro os destinos de cada conjunto de estados (que já estão na tabela) utilizando cada caractere do alfabeto
@@ -266,4 +292,85 @@ struct ControleDFA{
         }
         return conjunto;
     }
+
+// função que lê do arquivo de saída do cógigo toNFA.cpp e salva o NFA que está no arquivo
+    void LerNFA(){
+        std::fstream fin;
+        fin.open("nfa.txt");
+        std::string linha;
+        for(int i{0}; i < 2; i++){
+            getline(fin, linha);
+            int index{0};
+            std::stringstream ss (linha);
+            if(i == 0){
+                while(!ss.eof()){
+                    ss >> index;
+                    if(ss.eof())
+                        break;
+                    Estado* q = new Estado();
+                    this->nfa->estados.push_back(q);
+                }
+            }
+            else {
+                while(!ss.eof()){
+                    ss >> index;
+                    if (ss.eof())
+                        break;
+                    this->nfa->estados[index]->final = true;
+                }
+            }
+        }
+
+        while(getline(fin, linha)){
+            std::stringstream ss (linha);
+            int origem, destino;
+            char cTransicao;
+            ss >>origem >> cTransicao >> destino;
+            this->nfa->estados[origem]->transicoes.push_back({cTransicao, this->nfa->estados[destino]});
+        }
+        fin.close();
+    }
+
+// função que escreve o DFA em um arquivo chamado dfa.txt, tendo o DFA representado por:
+// posição dos estados, posição dos estados finais e transições
+    void EscreverDFA(){
+        std::ofstream fout;
+        fout.open("dfa.txt");
+        std::string str{""}; //string final com todos os dados inseridos
+        // coloca no arquivo todos os estados presentes no vetor de estados,
+        // os identifica com um número iniciando de 0, que é o estado inicial
+        for(int i{0}; i < this->DFAFinal->estados.size();i++){
+            fout << i << ' ';
+        }
+        fout << '\n';
+
+        // procura no vetor quais os estados finais para escrever
+        for(int i{0}; i < this->DFAFinal->estados.size();i++){
+            Estado* estado = this->DFAFinal->estados[i];
+            if(estado->final){
+                fout << i << ' ';
+            }
+        }
+        fout << '\n';
+        // escreve odas as transformações na string na estrutura:
+        // estado de origem char de transição estado de destino
+        for(int i{0}; i < this->DFAFinal->estados.size();i++){
+            Estado* estado = this->DFAFinal->estados[i];
+            for(int j{0}; j < estado->transicoes.size();j++){
+                std::pair<char, Estado*> transicao = estado->transicoes[j];
+                fout << i << ' ' << transicao.first << ' ';
+                fout << procuraPosicao(this->DFAFinal->estados, transicao.second);
+                fout << '\n';
+            }            
+        }
+        fout.close();
+    }
 };
+
+int main (){
+    ControleDFA controlador = ControleDFA();
+    controlador.LerNFA();
+    controlador.Conversao();
+    controlador.EscreverDFA();
+    return 0;
+}

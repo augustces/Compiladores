@@ -3,6 +3,7 @@
 #include <string>
 #include <stack>
 #include <string>
+#include <fstream>
 
 //um estado e suas transições
 struct Estado{
@@ -324,6 +325,7 @@ struct  ControleNFA {
             }
             else if (c == '*' && ER[i - 1] == '^'){continue;}
             else if (c == '|'){ continue;}
+            else if (c == '\n') {continue;}
             else{
                 NFA* nfaTemp = new NFA();
                 Estado* q0= new Estado();
@@ -383,4 +385,67 @@ struct  ControleNFA {
         return this->operacoesER(pilhaNFA, pilhaChar);
     }
 
+    void EscreverNFA(){
+        std::ofstream fout;
+        fout.open("nfa.txt");
+        // coloca no arquivo todos os estados presentes no vetor de estados,
+        // os identifica com um número iniciando de 0, que é o estado inicial
+        for(int i{0}; i < this->AFN_Final->estados.size();i++){
+            fout << i << ' ';
+        }
+        fout << '\n';
+
+        // procura no vetor quais os estados finais para escrever
+        for(int i{0}; i < this->AFN_Final->estados.size();i++){
+            Estado* estado = this->AFN_Final->estados[i];
+            if(estado->final){
+                fout << i << ' ';
+            }
+        }
+        fout << '\n';
+        // escreve odas as transformações na string na estrutura:
+        // estado de origem char de transição estado de destino
+        for(int i{0}; i < this->AFN_Final->estados.size();i++){
+            Estado* estado = this->AFN_Final->estados[i];
+            for(int j{0}; j < estado->transicoes.size();j++){
+                std::pair<char, Estado*> transicao = estado->transicoes[j];
+                fout << i << ' ' << transicao.first << ' ';
+                fout << procuraPosicao(this->AFN_Final, transicao.second);
+                fout << '\n';
+            }            
+        }
+        fout.close();
+    }
+
 };
+
+int main (){
+    // adicionando todas as Expressões regulares e depois escrevendo no arquivo
+    ControleNFA controladorNFA = ControleNFA();
+    controladorNFA.addER("[int]");
+    controladorNFA.addER("[string]");
+    controladorNFA.addER("[[_^|[a^|[b^|[c^|[d^|[e^|[f^|[g^|[h^|[i^|[j^|[k^|[l^|[m^|[n^|[o^|[p^|[q^|[r^|[s^|[t^|[u^|[v^|[w^|[x^|[y^|[z^|[A^|[B^|[C^|[D^|[E^|[F^|[G^|[H^|[I^|[J^|[K^|[L^|[M^|[N^|[O^|[P^|[Q^|[R^|[S^|[T^|[U^|[V^|[W^|[X^|[Y^|Z]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]][[[_^|[a^|[b^|[c^|[d^|[e^|[f^|[g^|[h^|[i^|[j^|[k^|[l^|[m^|[n^|[o^|[p^|[q^|[r^|[s^|[t^|[u^|[v^|[w^|[x^|[y^|[z^|[A^|[B^|[C^|[D^|[E^|[F^|[G^|[H^|[I^|[J^|[K^|[L^|[M^|[N^|[O^|[P^|[Q^|[R^|[S^|[T^|[U^|[V^|[W^|[X^|[Y^|Z]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]^|[1^|[2^|[3^|[4^|[5^|[6^|[7^|[8^|[9^|0]]]]]]]]]]]]^*");
+    controladorNFA.addER("[[\"][_^|[a^|[b^|c^|[d^|[e^|[f^|[g^|[h^|[i^|[j^|[k^|[l^|[m^|[n^|[o^|[p^|[q^|[r^|[s^|[t^|[u^|[v^|[w^|[x^|[y^|[z^|[A^|[B^|[C^|[^|[D^|[E^|[F^|[G^|[H^|[I^|[J^|[K^|[L^|[M^|[N^|[O^|[P^|[Q^|[R^|[S^|[T^|[U^|[V^|[W^|[X^|[Y^|[Z^|[;^|[=^|[+^|[-^|[*^|[/^|[%^|[1^|[2^|[3^|[4^|[5^|[6^|[7^|[8^|[9^|[0^|[&&^|[||^|[,^|[<^|[>^|[(^|[{^|[)^|}]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]^*[\"]]");
+    controladorNFA.addER("[;]");
+    controladorNFA.addER("[=]");
+    controladorNFA.addER("[+]");
+    controladorNFA.addER("[-]");
+    controladorNFA.addER("[*]");
+    controladorNFA.addER("[/]");
+    controladorNFA.addER("[%]");
+    controladorNFA.addER("[[1^|[2^|[3^|[4^|[5^|[6^|[7^|[8^|[9^|0]]]]]]]]][1^|[2^|[3^|[4^|[5^|[6^|[7^|[8^|[9^|0]]]]]]]]]^*]");
+    controladorNFA.addER("[if]");
+    controladorNFA.addER("[else]");
+    controladorNFA.addER("[return]");
+    controladorNFA.addER("[(]");
+    controladorNFA.addER("[)]");
+    controladorNFA.addER("[,]");
+    controladorNFA.addER("[{]");
+    controladorNFA.addER("[}]");
+    controladorNFA.addER("[<]");
+    controladorNFA.addER("[>]");
+    controladorNFA.addER("[&&]");
+    controladorNFA.addER("[||]");
+    controladorNFA.addER("[!=]");
+    controladorNFA.EscreverNFA();
+}
